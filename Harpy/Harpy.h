@@ -28,17 +28,42 @@ FOUNDATION_EXPORT NSString * const HarpyLanguageSpanish;
 @protocol HarpyDelegate <NSObject>
 
 @optional
-- (void)harpyDidShowUpdateDialog;       // User presented with update dialog
-- (void)harpyUserDidLaunchAppStore;     // User did click on button that launched App Store.app
-- (void)harpyUserDidSkipVersion;        // User did click on button that skips version update
-- (void)harpyUserDidCancel;             // User did click on button that cancels update dialog
+
+/**
+ * Allows the delegate to prompt user update with a custom UI experience.
+ *
+ * @param updateDetails NSDictionary containing values pulled from the App Store.
+ */
+- (void)harpyShouldShowUpdateDialog:(NSDictionary *)appStoreDetails;
+
+/**
+ * User presented with update dialog
+ */
+- (void)harpyDidShowUpdateDialog;
+
+/**
+ * User did click on button that launched App Store.app
+ */
+- (void)harpyUserDidLaunchAppStore;
+
+/**
+ * User did click on button that skips version update
+ */
+- (void)harpyUserDidSkipVersion;
+
+/**
+ * User did click on button that cancels update dialog
+ */
+- (void)harpyUserDidCancel;
+
 @end
 
 typedef NS_ENUM(NSUInteger, HarpyAlertType)
 {
     HarpyAlertTypeForce,    // Forces user to update your app
     HarpyAlertTypeOption,   // (DEFAULT) Presents user with option to update app now or at next launch
-    HarpyAlertTypeSkip      // Presents User with option to update the app now, at next launch, or to skip this version all together
+    HarpyAlertTypeSkip,     // Presents User with option to update the app now, at next launch, or to skip this version all together
+    HarpyAlertTypeCustom    // Utilizes the HarpyDelegate to present a customer upgrade prompt
 };
 
 @interface Harpy : NSObject
@@ -106,5 +131,15 @@ typedef NS_ENUM(NSUInteger, HarpyAlertType)
  Do not use this method if you are using @c checkVersion or @c checkVersionDaily.
  */
 - (void)checkVersionWeekly;
+
+/**
+ Launch the App Store to bring up the app referenced by the app id.
+ */
+- (void)launchAppStore;
+
+/**
+ Skips prompting for update with the current version of the app.
+ */
+- (void)skipVersion;
 
 @end

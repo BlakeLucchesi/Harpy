@@ -233,48 +233,58 @@ NSString * const HarpyLanguageSpanish = @"es";
         skipButtonText = HARPY_LOCALIZED_STRING(@"Skip this version");
     }
     
-    // Initialize UIAlertView
-    UIAlertView *alertView;
-    
-    // Show Appropriate UIAlertView
-    switch ([self alertType]) {
-            
-        case HarpyAlertTypeForce: {
-            
-            alertView = [[UIAlertView alloc] initWithTitle:updateAvailableMessage
-                                                   message:newVersionMessage
-                                                  delegate:self
-                                         cancelButtonTitle:updateAvailableMessage
-                                         otherButtonTitles:nil, nil];
-            
-        } break;
-            
-        case HarpyAlertTypeOption: {
-            
-           alertView = [[UIAlertView alloc] initWithTitle:updateAvailableMessage
-                                                  message:newVersionMessage
-                                                 delegate:self
-                                        cancelButtonTitle:nextTimeButtonText
-                                        otherButtonTitles:updateButtonText, nil];
-            
-        } break;
-            
-        case HarpyAlertTypeSkip: {
-            
-            // Store currentAppStoreVersion in case user pushes skip
-            [[NSUserDefaults standardUserDefaults] setObject:currentAppStoreVersion forKey:HARPY_DEFAULT_SKIPPED_VERSION];
-            [[NSUserDefaults standardUserDefaults] synchronize];
-            
-            alertView = [[UIAlertView alloc] initWithTitle:updateAvailableMessage
-                                                   message:newVersionMessage
-                                                  delegate:self
-                                         cancelButtonTitle:skipButtonText
-                                         otherButtonTitles:updateButtonText, nextTimeButtonText, nil];
-            
-        } break;
+    if (self.alertType == HarpyAlertTypeCustom && [self.delegate respondsToSelector:@selector(harpyShouldShowUpdateDialog:)]) {
+        NSArray *appStoreResults = [self.appData objectForKey:@"results"];
+        NSDictionary *appStoreDetails = [appStoreResults objectAtIndex:0];
+        [self.delegate harpyShouldShowUpdateDialog:appStoreDetails];
     }
-    
-    [alertView show];
+    else {
+        // Initialize UIAlertView
+        UIAlertView *alertView;
+        
+        // Show Appropriate UIAlertView
+        switch ([self alertType]) {
+            case HarpyAlertTypeCustom: {
+                NSLog(@"ERROR: In order to use the alertType HarpyAlertTypeCustom you must implement the harpyShouldShowUpdateDialog: method in your delegate.");
+            } break;
+                
+            case HarpyAlertTypeForce: {
+                
+                alertView = [[UIAlertView alloc] initWithTitle:updateAvailableMessage
+                                                       message:newVersionMessage
+                                                      delegate:self
+                                             cancelButtonTitle:updateAvailableMessage
+                                             otherButtonTitles:nil, nil];
+                
+            } break;
+                
+            case HarpyAlertTypeOption: {
+                
+                alertView = [[UIAlertView alloc] initWithTitle:updateAvailableMessage
+                                                       message:newVersionMessage
+                                                      delegate:self
+                                             cancelButtonTitle:nextTimeButtonText
+                                             otherButtonTitles:updateButtonText, nil];
+                
+            } break;
+                
+            case HarpyAlertTypeSkip: {
+                
+                // Store currentAppStoreVersion in case user pushes skip
+                [[NSUserDefaults standardUserDefaults] setObject:currentAppStoreVersion forKey:HARPY_DEFAULT_SKIPPED_VERSION];
+                [[NSUserDefaults standardUserDefaults] synchronize];
+                
+                alertView = [[UIAlertView alloc] initWithTitle:updateAvailableMessage
+                                                       message:newVersionMessage
+                                                      delegate:self
+                                             cancelButtonTitle:skipButtonText
+                                             otherButtonTitles:updateButtonText, nextTimeButtonText, nil];
+                
+            } break;
+        }
+        
+        [alertView show];
+    }
 
     if([self.delegate respondsToSelector:@selector(harpyDidShowUpdateDialog)]){
         [self.delegate harpyDidShowUpdateDialog];
@@ -292,10 +302,20 @@ NSString * const HarpyLanguageSpanish = @"es";
     }
 }
 
+- (void)skipVersion
+{
+    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:HARPY_DEFAULT_SHOULD_SKIP_VERSION];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
 #pragma mark - UIAlertViewDelegate
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
     switch ([self alertType]) {
+            
+        case HarpyAlertTypeCustom: {
+            NSLog(@"ERROR: Harpy.m should not be the delegate handling UIAlertView:clickedButtonAtIndex: if the alert type is Custom.");
+        } break;
             
         case HarpyAlertTypeForce: { // Launch App Store.app
 
@@ -318,10 +338,7 @@ NSString * const HarpyLanguageSpanish = @"es";
         case HarpyAlertTypeSkip: {
             
             if (0 == buttonIndex) { // Skip current version in AppStore
-            
-                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:HARPY_DEFAULT_SHOULD_SKIP_VERSION];
-                [[NSUserDefaults standardUserDefaults] synchronize];
-
+                [self skipVersion];
                 if([self.delegate respondsToSelector:@selector(harpyUserDidSkipVersion)]){
                     [self.delegate harpyUserDidSkipVersion];
                 }
